@@ -5,8 +5,6 @@ from wikitools import api
 from wikitools import page
 import re
 import cgi
-import sys
-import random
 
 # Strip HTML from strings in Python
 from HTMLParser import HTMLParser
@@ -35,15 +33,18 @@ def get_first_image(html_des):
         return None
 
 def error_quit(msg=""):
+    import sys
     """Quits the application with msg"""
+    print "<br /><span class='error'>"
     print "Error: " + msg
+    print "</span>"
     print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
     sys.exit(0)
 
 def get_html_para(html_des):
     """Extracts the first paragraph of the article in Wikipedia HTML html_des"""
     split_html = html_des.split("\\n")
-    pat = r"(?i)<p>.*?<b>%s.*?</b>.*?</p>" % subject
+    pat = r"(?i)<p>.*?<b>.*?</b>.*?</p>"
     found = False
     for html_line in split_html:
         match = re.search(pat, html_line)
@@ -66,6 +67,18 @@ def wiki_to_html(site, wikitext):
     request = api.APIRequest(site, params)
     html_des = str(request.query())
     return html_des
+
+def get_random_links(wikipage, count):
+    import random
+    links = []
+    all_links = wikipage.getLinks()
+    size = len(all_links)
+    for i in range(count):
+        rand = random.randint(0, size-1)
+        links.append(all_links[rand])
+        del(all_links[rand])
+        size -= 1
+    return links
     
 print "Content-type: text/html\n\n"
 print """
@@ -97,9 +110,9 @@ info = str(wikipage.setPageInfo()).split()
 # e.g. Albert&nbsp;Einstein in wikitext
 subject = ('.*?'.join(info[1:-2])).strip("'")
 # Subject as it will be read
-plainsubject = (' '.join(info[1:-2])).strip("'")
+subject_plain = (' '.join(info[1:-2])).strip("'")
 
-print "<p><b>" + plainsubject + "</b>: "
+print "<p><b>" + subject_plain + "</b>: "
 
 # Only get the first section of article
 wikipage.setSection(number=0)
@@ -128,6 +141,14 @@ image = get_first_image(html_des)
 if image:
     print image
 
+# Present random links from article
+links = get_random_links(wikipage, 2)
+print "<h4>Random Links from '%s':</h4>" % subject_plain
+print "<form action='wikilink.py' method='get' enctype='multipart/form-data'>"
+for link in links:
+    print "<input type='submit' name='query' value='%s' ><br />" % link
+print "</form>"
+    
 print """
 </body>
 </html>
