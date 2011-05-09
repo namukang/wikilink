@@ -80,6 +80,15 @@ def get_random_links(wikipage, count):
         size -= 1
     return links
 
+def record(query):
+    import datetime
+    now = datetime.datetime.now()
+    time = now.strftime("%Y-%m-%d %H:%M:%S")
+    
+    f = open('history.txt', 'a')
+    f.write(time + " " + query + "\n")
+    f.close()
+    
 def main(query):
     print "Content-type: text/html\n\n"
     print """
@@ -87,10 +96,11 @@ def main(query):
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
 <head>
-  <title>Wikilink</title>
+  <title>Wikilink | %s</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
 </head>
 <body>
-"""
+""" % query
 
     print "<h3>Query: '%s'</h3>" % query
 
@@ -108,7 +118,7 @@ def main(query):
     # Subject as it will be read
     subject_plain = (' '.join(info[1:-2])).strip("'")
 
-    print "<p><b>" + subject_plain + "</b>: "
+    print "<div id='info'><p><b>" + subject_plain + "</b>: "
 
     # Only get the first section of article
     wikipage.setSection(number=0)
@@ -130,7 +140,7 @@ def main(query):
     html_para = get_html_para(html_des)
     # Strip out the HTML    
     plain_des = strip_tags(html_para)
-    print plain_des + "</p>"
+    print plain_des + "</p></div>"
 
     # Print an image from the wikipedia article if one exists
     image = get_first_image(html_des)
@@ -155,4 +165,5 @@ if __name__ == "__main__":
         form = cgi.FieldStorage()
         # Look up "None" if there is no input :)
         query = str(form.getfirst("query"))
+    record(query)
     main(query)
