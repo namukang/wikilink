@@ -40,9 +40,6 @@ form = cgi.FieldStorage()
 query = str(form.getfirst("query", "Princeton University"))
 print "<h3>Query: '%s'</h3>" % query
 
-query = sys.argv[1]
-
-
 site = wiki.Wiki()
 # Do not sleep if wiki server is lagging
 site.setMaxlag(-1)
