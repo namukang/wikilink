@@ -5,6 +5,7 @@ from wikitools import api
 from wikitools import page
 import re
 import cgi
+import sys
 
 # Strip HTML from strings in Python
 from HTMLParser import HTMLParser
@@ -39,7 +40,7 @@ form = cgi.FieldStorage()
 query = str(form.getfirst("query", "Princeton University"))
 print "<h3>Query: '%s'</h3>" % query
 
-query = "Albert Einstein"
+query = str(sys.argv[1])
 
 site = wiki.Wiki()
 # Do not sleep if wiki server is lagging
@@ -58,41 +59,38 @@ subjectsingle = ('(\s)?'.join(info[1:-2])).strip("'")
 # Subject as it will be read
 plainsubject = (' '.join(info[1:-2])).strip("'")
 
+print "<p><b>" + plainsubject + "</b>: "
+
 # Only get the first section of article
 wikipage.setSection(number=0)
 try:
     wikitext = wikipage.getWikiText()
 except page.NoPage:
-    print "<p> No Wikipedia article can be found for '%s'<br />" % query
-    print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.<br /></p>"
-    import sys
+    print "No Wikipedia article can be found for '%s'<br />" % query
+    print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
     sys.exit(0)
 
-# Try to keep only the first sentence of wikitext
-pat = r"(?i)\s.*?'''%s.*?\.\s" % subject
-match = re.search(pat, wikitext)
-if match:
-    wikides = match.group()
-else:
-    wikides = wikitext
-
-params = {'action':'parse', 'text': wikides}
+params = {'action':'parse', 'text': wikitext}
 request = api.APIRequest(site, params)
 htmldes = str(request.query())
-plaindes = strip_tags(htmldes)
 
-# Only keep the first sentence
-pat = r"(?i)%s\s.*?\." % subjectsingle
-print pat
-match = re.search(pat, plaindes)
+# Make sure a useful description is found
+pat = r"may refer to"
+match = re.search(pat, htmldes)
 if match:
-    shortdes = match.group()
-else:
-    shortdes = plaindes
+    print "'%s' is too ambiguous.<br />" % query
+    print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
+    sys.exit(0)
+
+# Only keep HTML for first paragraph
+pat = r"(?i)<p>[^\\]*<b>%s</b>.*?</p>" % subject
+match = re.search(pat, htmldes)
+if match:
+    htmldes = match.group()
+
+plaindes = strip_tags(htmldes)
+print plaindes + "</p>"    
     
-print "<b>" + plainsubject + "</b>: " + shortdes + "<br />"
-
-
 print """
 </body>
 </html>
