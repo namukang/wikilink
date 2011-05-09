@@ -40,11 +40,14 @@ form = cgi.FieldStorage()
 query = str(form.getfirst("query", "Princeton University"))
 print "<h3>Query: '%s'</h3>" % query
 
+query = sys.argv[1]
+
+
 site = wiki.Wiki()
 # Do not sleep if wiki server is lagging
 site.setMaxlag(-1)
-wikipage = page.Page(site, query)
 
+wikipage = page.Page(site, query)
 # Find actual article subject chosen from query
 # e.g. the query "meow" returns the article for "Cat communication"
 info = str(wikipage.setPageInfo()).split()
@@ -79,18 +82,30 @@ if match:
     sys.exit(0)
 
 # Only keep HTML for first paragraph
-pat = r"(?i)<p>[^\\]*<b>%s</b>.*?</p>" % subject
-match = re.search(pat, htmldes)
-if match:
-    htmldes = match.group()
-else:
-    print "The term '%s' is too ambiguous.<br />" % query
+split_html = htmldes.split("\\n")
+pat = r"(?i)<p>.*?<b>%s.*?</b>.*?</p>" % subject
+found = False
+for html_line in split_html:
+    match = re.search(pat, html_line)
+    if match:
+        htmlpara = match.group()
+        found = True
+        break
+
+if not found:
+    print "The article for the term '%s' has unconventional formatting.<br />" % query
     print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
     sys.exit(0)
     
-plaindes = strip_tags(htmldes)
+plaindes = strip_tags(htmlpara)
 print plaindes + "</p>"    
-    
+
+# Print an image from the wikipedia article if one exists
+pat = r"(thumbinner|biography|vcard).*?(<img.*?/>)"
+match = re.search(pat, htmldes)
+if match:
+    print match.group(2)
+
 print """
 </body>
 </html>
