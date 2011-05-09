@@ -39,6 +39,8 @@ form = cgi.FieldStorage()
 query = str(form.getfirst("query", "Princeton University"))
 print "<h3>Query: '%s'</h3>" % query
 
+query = "Albert Einstein"
+
 site = wiki.Wiki()
 # Do not sleep if wiki server is lagging
 site.setMaxlag(-1)
@@ -47,7 +49,13 @@ wikipage = page.Page(site, query)
 # Find actual article subject chosen from query
 # e.g. the query "meow" returns the article for "Cat communication"
 info = str(wikipage.setPageInfo()).split()
+# Subject may have any number of characters between its words
+# e.g. Albert&nbsp;Einstein in wikitext
 subject = ('.*?'.join(info[1:-2])).strip("'")
+# Subject may only have one space (or none) in between its words
+# e.g. AlbertEinstein in plaindes
+subjectsingle = ('(\s)?'.join(info[1:-2])).strip("'")
+# Subject as it will be read
 plainsubject = (' '.join(info[1:-2])).strip("'")
 
 # Only get the first section of article
@@ -60,7 +68,7 @@ except page.NoPage:
     import sys
     sys.exit(0)
 
-# Find first sentence of description
+# Try to keep only the first sentence of wikitext
 pat = r"(?i)\s.*?'''%s.*?\.\s" % subject
 match = re.search(pat, wikitext)
 if match:
@@ -68,21 +76,21 @@ if match:
 else:
     wikides = wikitext
 
-
 params = {'action':'parse', 'text': wikides}
 request = api.APIRequest(site, params)
-result = str(request.query())
-
-# Only keep the pertinent HTML
-pat = r"(?i)<p>.*?<b>%s</b>.*?</p>" % subject
-match = re.search(pat, result)
-if match:
-    htmldes = match.group()
-else:
-    htmldes = result
-    
+htmldes = str(request.query())
 plaindes = strip_tags(htmldes)
-print "<b>" + plainsubject + "</b>: " + plaindes + "<br />"
+
+# Only keep the first sentence
+pat = r"(?i)%s\s.*?\." % subjectsingle
+print pat
+match = re.search(pat, plaindes)
+if match:
+    shortdes = match.group()
+else:
+    shortdes = plaindes
+    
+print "<b>" + plainsubject + "</b>: " + shortdes + "<br />"
 
 
 print """
