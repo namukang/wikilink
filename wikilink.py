@@ -6,6 +6,7 @@ from wikitools import page
 import re
 import cgi
 import sys
+import random
 
 # Strip HTML from strings in Python
 from HTMLParser import HTMLParser
@@ -24,7 +25,48 @@ def strip_tags(html):
     s.feed(html)
     return s.get_data()
 
-# Take user input as query word
+def get_first_image(html_des):
+    """Returns HTML for the first pertinent image contained in the Wikipedia HTML html_des"""
+    pat = r"(thumbinner|biography|vcard).*?(<img.*?/>)"
+    match = re.search(pat, html_des)
+    if match:
+        return match.group(2)
+    else:
+        return None
+
+def error_quit(msg=""):
+    """Quits the application with msg"""
+    print "Error: " + msg
+    print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
+    sys.exit(0)
+
+def get_html_para(html_des):
+    """Extracts the first paragraph of the article in Wikipedia HTML html_des"""
+    split_html = html_des.split("\\n")
+    pat = r"(?i)<p>.*?<b>%s.*?</b>.*?</p>" % subject
+    found = False
+    for html_line in split_html:
+        match = re.search(pat, html_line)
+        if match:
+            html_para = match.group()
+            found = True
+            break
+    if not found:
+        msg = "Wikilink bot cannot parse article for '%s'.<br />" % query
+        error_quit(msg)
+    return html_para
+
+def invalid_article(html_des):
+    """Return True if the article in Wikipedia HTML html_des is not an actual article"""
+    return "may refer to" in html_des
+
+def wiki_to_html(site, wikitext):
+    """Translate wikitext to HTML"""
+    params = {'action':'parse', 'text': wikitext}
+    request = api.APIRequest(site, params)
+    html_des = str(request.query())
+    return html_des
+    
 print "Content-type: text/html\n\n"
 print """
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -36,6 +78,7 @@ print """
 <body>
 """
 
+# Take user input as query word
 form = cgi.FieldStorage()
 query = str(form.getfirst("query", "Princeton University"))
 print "<h3>Query: '%s'</h3>" % query
@@ -61,47 +104,27 @@ wikipage.setSection(number=0)
 try:
     wikitext = wikipage.getWikiText()
 except:
-    print "No Wikipedia article can be found for '%s'<br />" % query
-    print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
-    sys.exit(0)
+    msg = "No Wikipedia article can be found for '%s'<br />" % query
+    error_quit(msg)
 
 # Translate wikitext to HTML
-params = {'action':'parse', 'text': wikitext}
-request = api.APIRequest(site, params)
-htmldes = str(request.query())
+html_des = wiki_to_html(site, wikitext)
 
-# Make sure query is not too ambiguous
-pat = r"may refer to"
-match = re.search(pat, htmldes)
-if match:
-    print "The term '%s' is too ambiguous.<br />" % query
-    print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
-    sys.exit(0)
+# Check validity of article
+if invalid_article(html_des):
+    msg = "The term '%s' is too ambiguous.<br />" % query
+    error_quit(msg)
 
-# Only keep HTML for first paragraph
-split_html = htmldes.split("\\n")
-pat = r"(?i)<p>.*?<b>%s.*?</b>.*?</p>" % subject
-found = False
-for html_line in split_html:
-    match = re.search(pat, html_line)
-    if match:
-        htmlpara = match.group()
-        found = True
-        break
-
-if not found:
-    print "The article for the term '%s' has unconventional formatting.<br />" % query
-    print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
-    sys.exit(0)
-    
-plaindes = strip_tags(htmlpara)
-print plaindes + "</p>"    
+# Get first descriptive paragraph from HTML
+html_para = get_html_para(html_des)
+# Strip out the HTML    
+plain_des = strip_tags(html_para)
+print plain_des + "</p>"
 
 # Print an image from the wikipedia article if one exists
-pat = r"(thumbinner|biography|vcard).*?(<img.*?/>)"
-match = re.search(pat, htmldes)
-if match:
-    print match.group(2)
+image = get_first_image(html_des)
+if image:
+    print image
 
 print """
 </body>
