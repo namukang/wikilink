@@ -79,9 +79,10 @@ def get_random_links(wikipage, count):
         del(all_links[rand])
         size -= 1
     return links
-    
-print "Content-type: text/html\n\n"
-print """
+
+def main():
+    print "Content-type: text/html\n\n"
+    print """
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
@@ -91,65 +92,66 @@ print """
 <body>
 """
 
-# Take user input as query word
-form = cgi.FieldStorage()
-# Look up "None" if there is no input :)
-query = str(form.getfirst("query"))
-    
-print "<h3>Query: '%s'</h3>" % query
+    # Take user input as query word
+    form = cgi.FieldStorage()
+    # Look up "None" if there is no input :)
+    query = str(form.getfirst("query"))
 
-site = wiki.Wiki()
-# Do not sleep if wiki server is lagging
-site.setMaxlag(-1)
+    print "<h3>Query: '%s'</h3>" % query
 
-wikipage = page.Page(site, query)
-# Find actual article subject chosen from query
-# e.g. the query "meow" returns the article for "Cat communication"
-info = str(wikipage.setPageInfo()).split()
-# Subject may have any number of characters between its words
-# e.g. Albert&nbsp;Einstein in wikitext
-subject = ('.*?'.join(info[1:-2])).strip("'")
-# Subject as it will be read
-subject_plain = (' '.join(info[1:-2])).strip("'")
+    site = wiki.Wiki()
+    # Do not sleep if wiki server is lagging
+    site.setMaxlag(-1)
 
-print "<p><b>" + subject_plain + "</b>: "
+    wikipage = page.Page(site, query)
+    # Find actual article subject chosen from query
+    # e.g. the query "meow" returns the article for "Cat communication"
+    info = str(wikipage.setPageInfo()).split()
+    # Subject may have any number of characters between its words
+    # e.g. Albert&nbsp;Einstein in wikitext
+    subject = ('.*?'.join(info[1:-2])).strip("'")
+    # Subject as it will be read
+    subject_plain = (' '.join(info[1:-2])).strip("'")
 
-# Only get the first section of article
-wikipage.setSection(number=0)
-try:
-    wikitext = wikipage.getWikiText()
-except:
-    msg = "No Wikipedia article can be found for '%s'<br />" % query
-    error_quit(msg)
+    print "<p><b>" + subject_plain + "</b>: "
 
-# Translate wikitext to HTML
-html_des = wiki_to_html(site, wikitext)
+    # Only get the first section of article
+    wikipage.setSection(number=0)
+    try:
+        wikitext = wikipage.getWikiText()
+    except:
+        msg = "No Wikipedia article can be found for '%s'<br />" % query
+        error_quit(msg)
 
-# Check validity of article
-if invalid_article(html_des):
-    msg = "The term '%s' is too ambiguous.<br />" % query
-    error_quit(msg)
+    # Translate wikitext to HTML
+    html_des = wiki_to_html(site, wikitext)
 
-# Get first descriptive paragraph from HTML
-html_para = get_html_para(html_des)
-# Strip out the HTML    
-plain_des = strip_tags(html_para)
-print plain_des + "</p>"
+    # Check validity of article
+    if invalid_article(html_des):
+        msg = "The term '%s' is too ambiguous.<br />" % query
+        error_quit(msg)
 
-# Print an image from the wikipedia article if one exists
-image = get_first_image(html_des)
-if image:
-    print image
+    # Get first descriptive paragraph from HTML
+    html_para = get_html_para(html_des)
+    # Strip out the HTML    
+    plain_des = strip_tags(html_para)
+    print plain_des + "</p>"
 
-# Present random links from article
-links = get_random_links(wikipage, 2)
-print "<h4>Random Links from '%s':</h4>" % subject_plain
-print "<form action='wikilink.py' method='get' enctype='multipart/form-data'>"
-for link in links:
-    print "<input type='submit' name='query' value='%s' ><br />" % link
-print "</form>"
-    
-print """
-</body>
-</html>
-"""
+    # Print an image from the wikipedia article if one exists
+    image = get_first_image(html_des)
+    if image:
+        print image
+
+    # Present random links from article
+    links = get_random_links(wikipage, 2)
+    print "<h3>Links from '%s':</h3>" % subject_plain
+    print "<form action='wikilink.py' method='get' enctype='multipart/form-data'>"
+    for link in links:
+        print "<input type='submit' name='query' value='%s'>" % link
+    print "</form>"
+
+    print "</body></html>"
+
+if __name__ == "__main__":
+    main()
+
