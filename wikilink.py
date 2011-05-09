@@ -4,6 +4,8 @@ from wikitools import wiki
 from wikitools import api
 from wikitools import page
 import re
+import cgi
+import cgitb; cgitb.enable() # for troubleshooting
 
 # Strip HTML from strings in Python
 from HTMLParser import HTMLParser
@@ -22,7 +24,10 @@ def strip_tags(html):
     s.feed(html)
     return s.get_data()
 
-query = "Princeton University"
+# Take user input as query word
+print "Content-type: text/html\n\n"
+form = cgi.FieldStorage()
+query = str(form.getfirst("query", "Princeton University"))
 
 site = wiki.Wiki()
 # Do not sleep if wiki server is lagging
@@ -30,6 +35,7 @@ site.setMaxlag(-1)
 wikipage = page.Page(site, query)
 
 # Find actual article subject chosen from query
+# e.g. the query "meow" returns the article for "Cat communication"
 info = str(wikipage.setPageInfo()).split()
 subject = ('.*?'.join(info[1:-2])).strip("'")
 
@@ -38,7 +44,8 @@ wikipage.setSection(number=0)
 try:
     wikitext = wikipage.getWikiText()
 except page.NoPage:
-    print "No Wikipedia article can be found for '%s'" % query
+    print "No Wikipedia article can be found for '%s'<br />" % query
+    print "Please <a href='http://www.dskang.com/wikilink'>try again</a><br />"
     import sys
     sys.exit(0)
 
@@ -64,5 +71,5 @@ else:
     htmldes = result
     
 plaindes = strip_tags(htmldes)
-print plaindes
+print plaindes + "<br />"
 
