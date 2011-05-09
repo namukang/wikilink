@@ -5,6 +5,7 @@ from wikitools import api
 from wikitools import page
 import re
 import cgi
+import sys
 
 # Strip HTML from strings in Python
 from HTMLParser import HTMLParser
@@ -33,7 +34,6 @@ def get_first_image(html_des):
         return None
 
 def error_quit(msg=""):
-    import sys
     """Quits the application with msg"""
     print "<br /><span class='error'>"
     print "Error: " + msg
@@ -53,7 +53,7 @@ def get_html_para(html_des):
             found = True
             break
     if not found:
-        msg = "Wikilink bot cannot parse article for '%s'.<br />" % query
+        msg = "The article for '%s' cannot be parsed due to irregular formatting.<br />" % query
         error_quit(msg)
     return html_para
 
@@ -80,7 +80,7 @@ def get_random_links(wikipage, count):
         size -= 1
     return links
 
-def main():
+def main(query):
     print "Content-type: text/html\n\n"
     print """
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -91,11 +91,6 @@ def main():
 </head>
 <body>
 """
-
-    # Take user input as query word
-    form = cgi.FieldStorage()
-    # Look up "None" if there is no input :)
-    query = str(form.getfirst("query"))
 
     print "<h3>Query: '%s'</h3>" % query
 
@@ -153,5 +148,11 @@ def main():
     print "</body></html>"
 
 if __name__ == "__main__":
-    main()
-
+    if len(sys.argv) == 2:
+        query = str(sys.argv[1])
+    else:
+        # Take user input as query word
+        form = cgi.FieldStorage()
+        # Look up "None" if there is no input :)
+        query = str(form.getfirst("query"))
+    main(query)
