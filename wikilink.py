@@ -53,9 +53,6 @@ info = str(wikipage.setPageInfo()).split()
 # Subject may have any number of characters between its words
 # e.g. Albert&nbsp;Einstein in wikitext
 subject = ('.*?'.join(info[1:-2])).strip("'")
-# Subject may only have one space (or none) in between its words
-# e.g. AlbertEinstein in plaindes
-subjectsingle = ('(\s)?'.join(info[1:-2])).strip("'")
 # Subject as it will be read
 plainsubject = (' '.join(info[1:-2])).strip("'")
 
@@ -65,20 +62,21 @@ print "<p><b>" + plainsubject + "</b>: "
 wikipage.setSection(number=0)
 try:
     wikitext = wikipage.getWikiText()
-except page.NoPage:
+except:
     print "No Wikipedia article can be found for '%s'<br />" % query
     print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
     sys.exit(0)
 
+# Translate wikitext to HTML
 params = {'action':'parse', 'text': wikitext}
 request = api.APIRequest(site, params)
 htmldes = str(request.query())
 
-# Make sure a useful description is found
+# Make sure query is not too ambiguous
 pat = r"may refer to"
 match = re.search(pat, htmldes)
 if match:
-    print "'%s' is too ambiguous.<br />" % query
+    print "The term '%s' is too ambiguous.<br />" % query
     print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
     sys.exit(0)
 
@@ -87,7 +85,11 @@ pat = r"(?i)<p>[^\\]*<b>%s</b>.*?</p>" % subject
 match = re.search(pat, htmldes)
 if match:
     htmldes = match.group()
-
+else:
+    print "The term '%s' is too ambiguous.<br />" % query
+    print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
+    sys.exit(0)
+    
 plaindes = strip_tags(htmldes)
 print plaindes + "</p>"    
     
