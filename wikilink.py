@@ -80,7 +80,9 @@ print """
 
 # Take user input as query word
 form = cgi.FieldStorage()
-query = str(form.getfirst("query", "Princeton University"))
+# Look up "None" if there is no input :)
+query = str(form.getfirst("query"))
+    
 print "<h3>Query: '%s'</h3>" % query
 
 site = wiki.Wiki()
