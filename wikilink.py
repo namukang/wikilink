@@ -122,7 +122,7 @@ def main(query):
     # Subject as it will be read
     subject_plain = (' '.join(info[1:-2])).strip("'")
     # First term of the query
-    subject_first = info[1].strip("'")
+    subject_first = info[1].strip("',")
 
     print "<div id='info'><p><b>" + subject_plain + "</b>: "
 
