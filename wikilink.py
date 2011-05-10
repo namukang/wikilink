@@ -59,7 +59,7 @@ def get_html_para(html_des):
 
 def invalid_article(html_des):
     """Return True if the article in Wikipedia HTML html_des is not an actual article"""
-    return "may refer to" in html_des or "may mean" in html_des
+    return "may refer to" in html_des or "can refer to" in html_des or "may mean" in html_des
 
 def wiki_to_html(site, wikitext):
     """Translate wikitext to HTML"""
