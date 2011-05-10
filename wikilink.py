@@ -89,7 +89,8 @@ def record(query):
     ipaddress = cgi.escape(os.environ["REMOTE_ADDR"])
     
     f = open('history.txt', 'a')
-    f.write(time + " | " + ipaddress + " | " + query + "\n")
+    entry = "%s | %-15s | %s\n" % (time, ipaddress, query)
+    f.write(entry)
     f.close()
     
 def main(query):
