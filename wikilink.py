@@ -41,10 +41,10 @@ def error_quit(msg=""):
     print "Please <a href='http://www.dskang.com/wikilink'>try again</a>.</p>"
     sys.exit(0)
 
-def get_html_para(html_des):
+def get_html_para(subject, html_des):
     """Extracts the first paragraph of the article in Wikipedia HTML html_des"""
     split_html = html_des.split("\\n")
-    pat = r"(?i)<p>.*?<b>.*?</b>.*?</p>"
+    pat = r"(?i)<p>.*?<b>.*?%s.*?</b>.*?</p>" % subject
     found = False
     for html_line in split_html:
         match = re.search(pat, html_line)
@@ -141,7 +141,7 @@ def main(query):
         error_quit(msg)
 
     # Get first descriptive paragraph from HTML
-    html_para = get_html_para(html_des)
+    html_para = get_html_para(subject, html_des)
     # Strip out the HTML    
     plain_des = strip_tags(html_para)
     print plain_des + "</p></div>"
