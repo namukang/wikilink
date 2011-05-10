@@ -59,7 +59,7 @@ def get_html_para(html_des):
 
 def invalid_article(html_des):
     """Return True if the article in Wikipedia HTML html_des is not an actual article"""
-    return "may refer to" in html_des
+    return "may refer to" in html_des or "may mean" in html_des
 
 def wiki_to_html(site, wikitext):
     """Translate wikitext to HTML"""
@@ -84,9 +84,12 @@ def record(query):
     import datetime
     now = datetime.datetime.now()
     time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+    import os
+    ipaddress = cgi.escape(os.environ["REMOTE_ADDR"])
     
     f = open('history.txt', 'a')
-    f.write(time + " " + query + "\n")
+    f.write(time + " | " + ipaddress + " | " + query + "\n")
     f.close()
     
 def main(query):
