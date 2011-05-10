@@ -121,6 +121,8 @@ def main(query):
     subject = ('.*?'.join(info[1:-2])).strip("'")
     # Subject as it will be read
     subject_plain = (' '.join(info[1:-2])).strip("'")
+    # First term of the query
+    subject_first = info[1].strip("'")
 
     print "<div id='info'><p><b>" + subject_plain + "</b>: "
 
@@ -141,7 +143,7 @@ def main(query):
         error_quit(msg)
 
     # Get first descriptive paragraph from HTML
-    html_para = get_html_para(subject, html_des)
+    html_para = get_html_para(subject_first, html_des)
     # Strip out the HTML    
     plain_des = strip_tags(html_para)
     print plain_des + "</p></div>"
