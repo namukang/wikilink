@@ -78,7 +78,7 @@ def get_random_links(wikipage, count):
         while not found:
             rand = random.randint(0, size-1)
             link = all_links[rand]
-            if not ":" in link:
+            if not ":" in link and not "list" in link.lower():
                 links.append(link)
                 found = True
             del(all_links[rand])
