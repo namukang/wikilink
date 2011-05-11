@@ -74,10 +74,15 @@ def get_random_links(wikipage, count):
     all_links = wikipage.getLinks()
     size = len(all_links)
     for i in range(count):
-        rand = random.randint(0, size-1)
-        links.append(all_links[rand])
-        del(all_links[rand])
-        size -= 1
+        found = False
+        while not found:
+            rand = random.randint(0, size-1)
+            link = all_links[rand]
+            if not ":" in link:
+                links.append(link)
+                found = True
+            del(all_links[rand])
+            size -= 1
     return links
 
 def record(query):
