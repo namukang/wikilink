@@ -99,8 +99,9 @@ def record(query):
     f.close()
     
 def main(query):
-    print "Content-type: text/html; charset=utf-8\n\n"
-    print """
+    if web:
+        print "Content-type: text/html; charset=utf-8\n\n"
+        print """
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html>
@@ -111,8 +112,9 @@ def main(query):
 <body>
 """ % query
 
-    print "<h3>Query: '%s'</h3>" % query
-
+        print "<h3>Query: '%s'</h3>" % query
+    else:
+        print "Query: %s" % query
     site = wiki.Wiki()
     # Do not sleep if wiki server is lagging
     site.setMaxlag(-1)
@@ -120,6 +122,7 @@ def main(query):
     wikipage = page.Page(site, query)
     # Find actual article subject chosen from query
     # e.g. the query "meow" returns the article for "Cat communication"
+    # e.g. ['Page', "'Cat", "communication'", 'from', "'http://en.wikipedia.org'"]
     info = str(wikipage.setPageInfo()).split()
     # Subject may have any number of characters between its words
     # e.g. Albert&nbsp;Einstein in wikitext
@@ -129,7 +132,10 @@ def main(query):
     # First term of the query
     subject_first = info[1].strip("',")
 
-    print "<div id='info'><p><b>" + subject_plain + "</b>: "
+    if web:
+        print "<div id='info'><p><b>" + subject_plain + "</b>: "
+    else:
+        print "Subject: %s" % subject_plain
 
     # Only get the first section of article
     wikipage.setSection(number=0)
@@ -151,30 +157,34 @@ def main(query):
     html_para = get_html_para(subject_first, html_des)
     # Strip out the HTML    
     plain_des = strip_tags(html_para)
-    print plain_des + "</p></div>"
+    print plain_des
+    if web:
+        print "</p></div>"
 
-    # Print an image from the wikipedia article if one exists
-    image = get_first_image(html_des)
-    if image:
-        print image
+        # Print an image from the wikipedia article if one exists
+        image = get_first_image(html_des)
+        if image:
+            print image
 
-    # Present random links from article
-    links = get_random_links(wikipage, 2)
-    print "<h3>Links from '%s':</h3>" % subject_plain
-    print "<form action='wikilink.py' method='get' enctype='multipart/form-data'>"
-    for link in links:
-        print "<input type='submit' name='query' value='%s'>" % link
-    print "</form>"
+        # Present random links from article
+        links = get_random_links(wikipage, 2)
+        print "<h3>Links from '%s':</h3>" % subject_plain
+        print "<form action='wikilink.py' method='get' enctype='multipart/form-data'>"
+        for link in links:
+            print "<input type='submit' name='query' value='%s'>" % link
+        print "</form>"
 
-    print "</body></html>"
+        print "</body></html>"
 
 if __name__ == "__main__":
     if len(sys.argv) == 2:
+        web = False
         query = str(sys.argv[1])
     else:
+        web = True
         # Take user input as query word
         form = cgi.FieldStorage()
         # Look up "None" if there is no input :)
         query = str(form.getfirst("query"))
-    record(query)
+        record(query)
     main(query)
